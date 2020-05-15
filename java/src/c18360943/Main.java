@@ -12,7 +12,7 @@ public class Main { //OOP Project
 	
 	public void startApp() {
 		String[] a = {"MAIN"};
-		processing.core.PApplet.runSketch(a, new Visuals());
+		processing.core.PApplet.runSketch(a, new Circles());
 	}
 
 }
