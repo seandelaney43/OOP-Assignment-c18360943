@@ -13,6 +13,8 @@ public class Circles extends Visuals {
 	LinkedList<Float> history = new LinkedList();
 	LinkedList<Float> bandsHist = new LinkedList();
 	boolean top=false;
+	boolean circlesOn = true;
+	boolean visualiserOn = true;
 	
 	public void settings() {
 		size(screenWidth, screenHeight);
@@ -22,7 +24,7 @@ public class Circles extends Visuals {
 		colorMode(HSB);
 		backgroundImage = loadImage(bGround);
 		startMinim();
-		loadAudio("TheRealm.mp3");
+		loadAudio("Insomnia.mp3");
 		getAudioPlayer().play();
 	}
 	
@@ -43,8 +45,12 @@ public class Circles extends Visuals {
 		stroke(hue, 255, 255);
 		noFill();
 		translate(screenWidth/2 , screenHeight/2);
-		Visualiser();
-		createCircles();
+		if(visualiserOn == true) {
+			Visualiser();
+		}
+		if(circlesOn == true) {
+			createCircles();
+		}
 	}
 	
 	
@@ -67,6 +73,23 @@ public class Circles extends Visuals {
         		top=false;
         	}
         }
+        if(key == 'c') {
+        	if(circlesOn == true) {
+        		circlesOn = false;
+        	}
+        	else {
+        		circlesOn = true;
+        	}
+        }
+        
+        if(key == 'v') {
+        	if(visualiserOn == true) {
+        		visualiserOn = false;
+        	}
+        	else {
+        		visualiserOn = true;
+        	}
+        }
     }
 	
 	void Visualiser() {
@@ -82,9 +105,6 @@ public class Circles extends Visuals {
 			else {
 				vertex(-i,-y);
 			}
-		}
-		if(bandsHist.size() == 1) {
-			bandsHist.clear();
 		}
 		endShape();
 		
