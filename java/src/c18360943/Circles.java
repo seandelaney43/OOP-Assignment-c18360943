@@ -1,104 +1,162 @@
 package c18360943;
 
-import processing.core.PApplet;
-import ddf.minim.*;
-import ddf.minim.analysis.FFT;
+import java.util.LinkedList;
 
-public class Visuals extends PApplet{
+import processing.core.PImage;
+
+public class Circles extends Visuals {
+	int screenWidth = 1668; //screenWidth and screenHeight are set to the dimensions  of the photo that I am using for my background
+	int screenHeight = 924;
+	private PImage backgroundImage;
+	private String bGround = "BG1.jpeg";
+	protected float hue;
+	LinkedList<Float> ampHistory = new LinkedList();
+	LinkedList<Float> bandsHist = new LinkedList();
+	LinkedList<Float> freqHist = new LinkedList();
+	boolean top=false;
+	boolean circlesOn = false;
+	boolean visualiserOn = true;
+	boolean freqCircle = true;
+	boolean cubeVisual = false;
+	boolean freqWave = false;
+	CircleVisuals cv;
+	AmplitudeWaves aw;
+	FreqCircle fc;
+	SquareVisuals sv;
+	FrequencyWave fw;
 	
-	private int frameSize = 512;
-	private int sampleRate = 44100;
-	private float bands[];
-	private float[]smoothedBands;
+	public void settings() {
+		size(screenWidth, screenHeight);
+	}
 	
-	private Minim minim;
-	private AudioPlayer ap;
-	private AudioBuffer ab;
-	private FFT fft;
-	private float amplitude; 
-	private float smoothenedAmplitude;
+	public void setup() {
+		cv = new CircleVisuals(this);
+		aw = new AmplitudeWaves(this);
+		fc = new FreqCircle(this);
+		sv = new SquareVisuals(this);
+		fw = new FrequencyWave(this);
+		startMinim();
+		backgroundImage = loadImage(bGround);
+		loadAudio("ThinkAboutThings.mp3");
+		getAudioPlayer().play();
+	}
 	
-	public void startMinim() {
-		minim = new Minim(this);
-		fft = new FFT(frameSize, sampleRate);
+	public void draw() {
+		background(backgroundImage);
+		colorMode(HSB, 360 ,100, 100);
+		try {
+			calculateFFT();
+		}
+		catch(VisualException e){
+			e.printStackTrace();
+		}
+		stroke(hue, 255,255); //set stroke to react to songs amplitude
+		noFill();
+		translate(screenWidth/2, screenHeight/2);
+		calculateAverageAmplitude();
+		calculateFrequencyBands();
+		hue = map(getAmplitude() * 1000, -400, 300, 0 ,255); //General hue set to respond to songs current amplitude
 		
-		bands = new float [(int) log2(frameSize)];
-		smoothedBands = new float[bands.length];
-	}
-	
-	float log2(float f) {
-		return log(f) / log(2.0f);
-	}
-	
-	protected void calculateFFT() throws VisualException{
-		fft.window(FFT.HAMMING);
-		
-		if(ab != null) {
-			fft.forward(ab);
+		ampHistory.add(getSmoothenedAmplitude());
+		if(ampHistory.size()== screenWidth/2) {
+			ampHistory.clear();       //Re-calibrate the history so visuals can re-start from center of the screen
 		}
-		else {
-			throw new VisualException("You must call startListening or loadAudio before calling FFT");
-		}
-	}
-	
-	public void calculateAverageAmplitude() {
-		float total = 0;
-		for(int i = 0 ; i < ab.size(); i++) {
-			total += abs(ab.get(i));
-		}
-		amplitude = total / ab.size();
-		smoothenedAmplitude = PApplet.lerp(smoothenedAmplitude, amplitude, 0.1f);
-	}
-	
-	protected void calculateFrequencyBands() {
-		for (int i = 0; i < bands.length; i++) {
-			int start = (int) pow(2, i) - 1;
-			int w = (int) pow(2, i);
-			int end = start + w;
-			float average = 0;
-			for (int j = start; j < end; j++) {
-				average += fft.getBand(j) * (j + 1);
+		for(int i = 0 ; i< getBands().length ; i++) {
+			bandsHist.add(getSmoothenedBands()[i]);
+			if(bandsHist.size() == screenWidth/2) {
+				bandsHist.clear();    //same as loop above except for frequency visualiser
 			}
-			average /= (float) w;
-			bands[i] = average * 5.0f;
-			smoothedBands[i] = lerp(smoothedBands[i], bands[i], 0.05f);
+		}
+		
+		//all visuals are user controlled.
+		if(visualiserOn == true) {
+			aw.render();
+		}
+		if(circlesOn == true) {
+			cv.render();
+		}
+		if(freqCircle == true) {
+			fc.render();
+		}
+		if(cubeVisual == true) {
+			sv.render();
+		}
+		if(freqWave == true) {
+			fw.render();
 		}
 	}
 	
-	public void loadAudio(String songName) {
-		ap = minim.loadFile(songName, frameSize);
-		ab = ap.left;
-	}
 	
-	public int getFrameSize() {
-		return frameSize;
-	}
+	public void keyPressed() //Functional keys set to allow the user to control visuals / audio.
+    {
+        if (key == ' ')
+        {
+            if(getAudioPlayer().isPlaying()) {
+            	getAudioPlayer().pause();
+            }
+            else {
+            	getAudioPlayer().play();
+            }
+        }
+        if(key == 't') {
+        	if(top==false) {
+        		top=true;
+        	}
+        	else {
+        		top=false;
+        	}
+        }
+        if(key == 'c') {
+        	if(circlesOn == true) {
+        		circlesOn = false;
+        	}
+        	else {
+        		circlesOn = true;
+        	}
+        }
+        
+        if(key == 'v') {
+        	if(visualiserOn == true) {
+        		visualiserOn = false;
+        	}
+        	else {
+        		visualiserOn = true;
+        	}
+        }
+        if(key == 'f') {
+        	if(freqCircle == true) {
+        		freqCircle = false;
+        	}
+        	else {
+        		freqCircle = true;
+        	}
+        }
+        if(key == 'g') {
+        	if(cubeVisual == false) {
+        		cubeVisual = true;
+        	}
+        	else {
+        		cubeVisual= false;
+        	}
+        }
+        if(key == 'w') {
+        	if(freqWave == false) {
+        		freqWave = true;
+        	}
+        	else {
+        		freqWave = false;
+        	}
+        }
+        if(key == 'x') {
+        	stop();
+        }
+    }
 	
-	public float[] getBands() {
-		return bands;
+	public void stop()  //Close the AudioPlayer and Minim after use.
+	{
+		getAudioPlayer().close();
+		getMinim().stop();
+		return;
 	}
-	
-	public float[]getSmoothenedBands(){
-		return smoothedBands;
-	}
-	
-	public Minim getMinim() {
-		return minim;
-	}
-	
-	public AudioBuffer getAudioBuffer() {
-		return ab;
-	}
-	
-	public float getAmplitude() {
-		return amplitude;
-	}
-	
-	public float getSmoothenedAmplitude() {
-		return smoothenedAmplitude;
-	}
-	
-	public AudioPlayer getAudioPlayer() {
-		return ap;
-	}
+
 }
