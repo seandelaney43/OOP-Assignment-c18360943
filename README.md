@@ -59,5 +59,5 @@ This was pretty much the same thing as the amplitude visualiser only I used the 
 I am very proud of what I created in this assignment. When I first began working on it a few weeks back I created a few different ideas just to try and test them out. They were initially very bad and I actually didn't even bother uploading them to github becauuse they were just for practice. I kept on geting errors in my draw function and the likes that I had no idea how to fix. Despite that, I kept working and came up with something that I actuallly quite enjoy looking at. I know it might be a simple enough project but for the first time ever I found myself showing what I had coded to my friends and family because usually the work I do they wouldn't understand but now I had something that looked like a real application that I could show off. I think that is the thing that I am most proud of. This is the first time I have coded something where the final product looks somewhat like a real app that people use everyday. I will definitely be expanding on this program in the future!.
 
 <h3>My Youtube video : </h3> 
-[![YouTube](https://ibb.co/wwDcsw8)](https://www.youtube.com/watch?v=OsAtdRGToW4&t=11s)
+[![YouTube](https://ibb.co/wwDcsw8)(https://www.youtube.com/watch?v=OsAtdRGToW4&t=11s)]
 
