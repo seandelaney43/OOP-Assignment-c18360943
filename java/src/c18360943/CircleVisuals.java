@@ -1,8 +1,5 @@
 package c18360943;
 
-import processing.core.*;
-import processing.core.PApplet;
-
 public class CircleVisuals extends Visuals{
 	Circles c;
 	int width;
