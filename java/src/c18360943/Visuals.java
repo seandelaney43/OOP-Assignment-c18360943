@@ -5,24 +5,20 @@ import ddf.minim.*;
 import ddf.minim.analysis.FFT;
 
 public class Visuals extends PApplet{
-	private int screenWidth = 1920;
-	private int screenHeight = 804;
 	
 	private int frameSize = 512;
 	private int sampleRate = 44100;
-	private float[] bands;
+	private float bands[];
 	private float[]smoothedBands;
 	
 	private Minim minim;
-	private AudioInput ai;
 	private AudioPlayer ap;
 	private AudioBuffer ab;
 	private FFT fft;
 	private float amplitude; 
 	private float smoothenedAmplitude;
 	
-	
-	public void startminim() {
+	public void startMinim() {
 		minim = new Minim(this);
 		fft = new FFT(frameSize, sampleRate);
 		
@@ -55,13 +51,13 @@ public class Visuals extends PApplet{
 	}
 	
 	protected void calculateFrequencyBands() {
-		for(int i = 0 ; i < bands.length; i++) {
-			int start = (int) pow(2,i) - 1;
-			int w = (int) pow(2,i);
+		for (int i = 0; i < bands.length; i++) {
+			int start = (int) pow(2, i) - 1;
+			int w = (int) pow(2, i);
 			int end = start + w;
-			float average  = 0;
-			for(int j = start ; j < end ; j++) {
-				average += fft.getBand(j) * (j+1);
+			float average = 0;
+			for (int j = start; j < end; j++) {
+				average += fft.getBand(j) * (j + 1);
 			}
 			average /= (float) w;
 			bands[i] = average * 5.0f;
@@ -69,7 +65,7 @@ public class Visuals extends PApplet{
 		}
 	}
 	
-	public void startMusic(String songName) {
+	public void loadAudio(String songName) {
 		ap = minim.loadFile(songName, frameSize);
 		ab = ap.left;
 	}
@@ -78,32 +74,16 @@ public class Visuals extends PApplet{
 		return frameSize;
 	}
 	
-	public void setFrameSize(int frameSize) {
-		this.frameSize = frameSize;
-	}
-	
-	public int getSampleRate() {
-		return sampleRate;
-	}
-	
-	public void setSampleRate(int sampleRate) {
-		this.sampleRate = sampleRate;
-	}
-	
 	public float[] getBands() {
 		return bands;
 	}
 	
-	public float[]getSmooothenedBands(){
+	public float[]getSmoothenedBands(){
 		return smoothedBands;
 	}
 	
 	public Minim getMinim() {
 		return minim;
-	}
-	
-	public AudioInput getAudioInput() {
-		return ai;
 	}
 	
 	public AudioBuffer getAudioBuffer() {
@@ -118,7 +98,7 @@ public class Visuals extends PApplet{
 		return smoothenedAmplitude;
 	}
 	
-	public AudioPlayer getAudioPLayer() {
+	public AudioPlayer getAudioPlayer() {
 		return ap;
 	}
 }
