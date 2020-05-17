@@ -1,152 +1,104 @@
 package c18360943;
 
-import java.util.LinkedList;
+import processing.core.PApplet;
+import ddf.minim.*;
+import ddf.minim.analysis.FFT;
 
-import processing.core.PImage;
-
-public class Circles extends Visuals {
-	int screenWidth = 1024; //screenWidth and screenHeight are set to the dimensions  of the photo that I am using for my background
-	int screenHeight = 775;
-	private PImage backgroundImage;
-	private String bGround = "Realm.jpg";
-	private float hue;
-	LinkedList<Float> history = new LinkedList();
-	LinkedList<Float> bandsHist = new LinkedList();
-	boolean top=false;
-	boolean circlesOn = true;
-	boolean visualiserOn = true;
+public class Visuals extends PApplet{
 	
-	public void settings() {
-		size(screenWidth, screenHeight);
-	}
+	private int frameSize = 512;
+	private int sampleRate = 44100;
+	private float bands[];
+	private float[]smoothedBands;
 	
-	public void setup() {
-		colorMode(HSB);
-		backgroundImage = loadImage(bGround);
-		startMinim();
-		loadAudio("Insomnia.mp3");
-		getAudioPlayer().play();
-	}
+	private Minim minim;
+	private AudioPlayer ap;
+	private AudioBuffer ab;
+	private FFT fft;
+	private float amplitude; 
+	private float smoothenedAmplitude;
 	
-	public void draw() {
-		calculateFFT();
-		calculateAverageAmplitude();
-		calculateFrequencyBands();
-		background(backgroundImage);
-		colorMode(HSB);
-		history.add(getSmoothenedAmplitude());
-		for(int i = 0 ; i< getBands().length ; i++) {
-			bandsHist.add(getSmoothenedBands()[i]);
-			if(bandsHist.size() == screenWidth/2) {
-				bandsHist.clear();
-			}
-		}
-		hue = map(getSmoothenedAmplitude() * 1000, -400, 300, 0 ,255);
-		stroke(hue, 255, 255);
-		noFill();
-		translate(screenWidth/2 , screenHeight/2);
-		if(visualiserOn == true) {
-			Visualiser();
-		}
-		if(circlesOn == true) {
-			createCircles();
-		}
-	}
-	
-	
-	public void keyPressed() //Functional keys for playing and pausing the audio
-    {
-        if (key == ' ')
-        {
-            if(getAudioPlayer().isPlaying()) {
-            	getAudioPlayer().pause();
-            }
-            else {
-            	getAudioPlayer().play();
-            }
-        }
-        if(key == 't') {
-        	if(top==false) {
-        		top=true;
-        	}
-        	else {
-        		top=false;
-        	}
-        }
-        if(key == 'c') {
-        	if(circlesOn == true) {
-        		circlesOn = false;
-        	}
-        	else {
-        		circlesOn = true;
-        	}
-        }
-        
-        if(key == 'v') {
-        	if(visualiserOn == true) {
-        		visualiserOn = false;
-        	}
-        	else {
-        		visualiserOn = true;
-        	}
-        }
-    }
-	
-	void Visualiser() {
-		//Amplitude visualizer at the bottom/top of the screen
-		beginShape();
-		stroke(255);
-		for(int i=0;i<bandsHist.size();i++) {
-			float y = map(bandsHist.get(i), 0, 512, screenHeight/2, 0);
-			if(top==false) {
-				vertex(i,y);
-				stroke(hue, 255, 255);
-			}
-			else {
-				vertex(-i,-y);
-			}
-		}
-		endShape();
+	public void startMinim() {
+		minim = new Minim(this);
+		fft = new FFT(frameSize, sampleRate);
 		
-		//Amplitude visualizer mirror
-		beginShape();
-		for(int i=0;i<bandsHist.size();i++) {
-			float y = map(bandsHist.get(i), 0, 512, screenHeight/2, 0);
-			if(top==false) {
-				stroke(hue, 255 ,255);
-				vertex((-i),y);
-			}
-			else {
-				vertex(i,-y);
-			}
-		}
-				endShape();
+		bands = new float [(int) log2(frameSize)];
+		smoothedBands = new float[bands.length];
 	}
 	
-	void createCircles() {
-		//outter circle
-		beginShape();
-		for(int i = 0; i<360;i++) {
-			float radius = map(getSmoothenedAmplitude(), 0, 1, 10, 200);
-			float x = radius * cos(i) * 3;
-			float y = radius * sin(i) * 4;
-			vertex(x,y);
-		}
-		endShape();
+	float log2(float f) {
+		return log(f) / log(2.0f);
+	}
+	
+	protected void calculateFFT() throws VisualException{
+		fft.window(FFT.HAMMING);
 		
-		//inner circle 
-		beginShape();
-		for(int i = 0; i<360 ; i++){
-			float radius = map(getSmoothenedAmplitude() , 0 , 1 , 10 , 100);
-			float x = radius * cos(i) * 2;
-			float y = radius * sin(i) * 2;
-			vertex(x,y);
+		if(ab != null) {
+			fft.forward(ab);
 		}
-		endShape();
-		
-		beginShape();
-		stroke(255);
-		ellipse(0 ,0 ,screenWidth , getSmoothenedAmplitude() * 3000);
-		endShape();
+		else {
+			throw new VisualException("You must call startListening or loadAudio before calling FFT");
+		}
+	}
+	
+	public void calculateAverageAmplitude() {
+		float total = 0;
+		for(int i = 0 ; i < ab.size(); i++) {
+			total += abs(ab.get(i));
+		}
+		amplitude = total / ab.size();
+		smoothenedAmplitude = PApplet.lerp(smoothenedAmplitude, amplitude, 0.1f);
+	}
+	
+	protected void calculateFrequencyBands() {
+		for (int i = 0; i < bands.length; i++) {
+			int start = (int) pow(2, i) - 1;
+			int w = (int) pow(2, i);
+			int end = start + w;
+			float average = 0;
+			for (int j = start; j < end; j++) {
+				average += fft.getBand(j) * (j + 1);
+			}
+			average /= (float) w;
+			bands[i] = average * 5.0f;
+			smoothedBands[i] = lerp(smoothedBands[i], bands[i], 0.05f);
+		}
+	}
+	
+	public void loadAudio(String songName) {
+		ap = minim.loadFile(songName, frameSize);
+		ab = ap.left;
+	}
+	
+	public int getFrameSize() {
+		return frameSize;
+	}
+	
+	public float[] getBands() {
+		return bands;
+	}
+	
+	public float[]getSmoothenedBands(){
+		return smoothedBands;
+	}
+	
+	public Minim getMinim() {
+		return minim;
+	}
+	
+	public AudioBuffer getAudioBuffer() {
+		return ab;
+	}
+	
+	public float getAmplitude() {
+		return amplitude;
+	}
+	
+	public float getSmoothenedAmplitude() {
+		return smoothenedAmplitude;
+	}
+	
+	public AudioPlayer getAudioPlayer() {
+		return ap;
 	}
 }
