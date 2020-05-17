@@ -1,12 +1,10 @@
 package c18360943;
 
-
 public class Main { //OOP Project
 
 	public static void main(String[] args) {
 		
 		Main main = new Main();
-		Visuals visual = new Visuals();
 		main.startApp();
 	}
 	
